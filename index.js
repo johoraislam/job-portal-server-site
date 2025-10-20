@@ -38,13 +38,18 @@ async function run() {
     // === GET: All Jobs ===
     app.get("/jobs", async (req, res) => {
       try {
-        const jobs = await jobCollection.find().toArray();
+        const email = req.query.email;
+        console.log("Email query received:", email);
+
+        const query = email ? { hr_email: email } : {};
+        const jobs = await jobCollection.find(query).toArray();
+        console.log("Jobs found:", jobs.length);
+
         res.send(jobs);
       } catch (error) {
         res.status(500).send({ message: "Error fetching jobs", error });
       }
     });
-
     const { ObjectId } = require("mongodb");
 
     app.get("/jobs/:id", async (req, res) => {
@@ -64,6 +69,11 @@ async function run() {
       }
     });
 
+    app.post("/jobs", async (req, res) => {
+      const newJob = req.body;
+      const result = await jobCollection.insertOne(newJob);
+      res.send(result);
+    });
 
     //job application api
     //get all data, get one data ,get many data
@@ -72,7 +82,13 @@ async function run() {
       const query = { applicantEmail: email };
       const result = await applicationCollection.find(query).toArray();
       res.send(result);
-      
+    });
+
+    app.get("/job-application/jobs/:job_id", async (req, res) => {
+      const jobId = req.params.job_id;
+      const query = { _id: jobId };
+      const result = await applicationCollection.find(query).toArray();
+      res.send(result);
     });
 
     app.post("/job-application", async (req, res) => {
@@ -80,7 +96,6 @@ async function run() {
       const result = await applicationCollection.insertOne(application);
       res.send(result);
     });
-
 
     // === POST: Add a Job ===
     app.post("/jobs", async (req, res) => {
